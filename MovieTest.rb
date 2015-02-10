@@ -1,5 +1,9 @@
+    #Author Michael Shemesh
+    #2/9/2015
+
 class MovieTest
 
+    #loads movie data and tests the first k ratings in the test data
 	def initialize(k, moviedata)
         @test_users=moviedata.test_user_list
 		@predictions=Array.new
@@ -16,7 +20,7 @@ class MovieTest
 	end
 	
 
-    #this returns the average prediction erro
+    #this returns the average prediction error
     def mean
         result=0
         @predictions.each do |pred|
@@ -44,7 +48,7 @@ class MovieTest
         return (result/@predictions.length)**0.5
     end
     
-    #returns array of predictions [u,m,r,p}
+    #returns array of predictions [u,m,r,p]
     def to_a
     	return @predictions
     end
