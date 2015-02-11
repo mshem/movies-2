@@ -12,7 +12,7 @@ class MovieTest
 	    user=@test_users[i]
 	    user.each do |movie, rating|
 	    	prediction=moviedata.predict(i,movie)
-	    	pred= {user: user, movie: movie, rating: rating, prediction: prediction}
+	    	pred= {user: i, movie: movie, rating: rating, prediction: prediction}
 	    	@predictions << pred
 	    	end
 	    i=i+1

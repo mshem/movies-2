@@ -36,7 +36,7 @@ class MovieData
 		@test_users=Hash.new
 
 		load_data(base,movies,users)
-		load_data(test,@test_movies,2test_users)
+		load_data(test,@test_movies,@test_users)
 
 	    
 
@@ -57,10 +57,10 @@ class MovieData
 	        if movies.has_key?(mov)
 		      viewers =  movies[mov]
 	          viewers << user
-	          movies[mov]=users
+	          movies[mov]=viewers
 	        else
 	        	viewers=[user] 
-	        	movies[mov]=users 
+	        	movies[mov]=viewers
 	        end
 	        
 
@@ -118,6 +118,7 @@ class MovieData
 				if u2.has_key? movie1
 					com = com+1 #if theyve seen the same movie, increase similarity
 					dif=dif+1-((rating1-u2[movie1]).abs)/4  #if theyre ratings are completely different then add 1, if they are the same, add 0
+				else
 				end
 			end
 			
@@ -139,8 +140,11 @@ class MovieData
 		end
 		res=Hash.new
 		user_list.each do |key, value|
+			if key==user
+			else
 			s=similarity(user, key)
 			res.store(key, s)
+			end
 			end
 		
 		result = res.sort_by{|k,v| v}.reverse
@@ -155,7 +159,13 @@ class MovieData
 	    def rating(user, movie)
 
 	        u=@users[user]
-	        return u[movie] || "0"
+	        if u == nil
+	        	return 0
+
+	        else
+
+	        return u[movie]
+	    end
 	    end
 
 	    	#returns a floating point number between 1.0 and 5.0 as an estimate of what user u would rate movie m
@@ -171,10 +181,29 @@ class MovieData
 	    	if users==nil
 	    		return 1+rand(5)
 	    	else
-	    		most_similar_user=most_similar(user,users).take(1)
-	    		return rating(most_similar_user, movie)
+	    		#otherwise return the average rating
+	    		return average_rating(users,movie)
 
 	   		 end
+	    end
+
+	    def average_rating(users, movie)
+	    	#this method finds the average rating for the given users and movie
+	    	result=0
+	    	inc=0
+	    	users.each do |k,v|
+	    		if v.has_key? movie
+	    			result=result+v[movie]
+	    			inc=inc+1
+	    		end
+	    	end
+
+	    	if inc==0
+	    		return 1+rand(5)
+	    	else
+	    		return result/inc
+	    	end
+
 	    end
 	    
 	    #returns the array of movies that user u has watched
@@ -183,9 +212,11 @@ class MovieData
 	        return u.keys
 	    end
 	    
-	    #returns the array ofusers that have seen movie m
+	    #returns the users that have seen movie
 	    def viewers(movie)
-	    	users=@movies[movie.to_i]
+
+	    	userarray=@movies[movie.to_i]
+	    	users=@users.select {|k,v| userarray.include? k} 
 	        return users
 	    end
 	    
@@ -209,6 +240,4 @@ class MovieData
 	end
 		
 		
-        
-
-end    
+    end    
