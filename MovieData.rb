@@ -5,23 +5,19 @@
 
 class MovieData
 
-	require './MovieTest.rb'
+	load MovieTest.rb
 	#initializes with default parameter name=nil. this will load data from the directory specified if there is a u.data file there.
 		#if name is specified, then two sets of data will be compared in that directory as name.base and name.test
 	def initialize(path, name=nil)
 		
-		@movies=Hash.new
-		@users=Hash.new
+
 		if name!=nil
 
-
-		base = path+"/"+name+".base"
-		test =path+"/"+name+".test"
-		load_test_data(base, test, @movies, @users)
+		load_test_data(path, name)
 
 		else
-			path=path+"/u.data"
-		load_data(path, @movies, @users)
+
+		load_data(path)
 
 		end
 
@@ -30,22 +26,98 @@ class MovieData
 	end
 
 	#loads data into base and test hashe instance variables
-	def load_test_data(base, test, movies, users)
+	def load_test_data(path, name)
 		
+		@movies=Hash.new
+		@users=Hash.new
 		@test_movies=Hash.new
 		@test_users=Hash.new
+		base = path+"/"+name+".base"
+		test =path+"/"+name+".test"
 
-		load_data(base,movies,users)
-		load_data(test,@test_movies,2test_users)
+		 basetxt= open(base)
+		 testtxt=open(test)
+		 #first reads through text of base
+	    while line = basetxt.gets do
+		#turns each line into a hash review
+	        rev=review(line)
+		#this would be a good time to make a list of movies
+	        mov = rev[:movie]
+	        # we will make a hash that associates the user id with hashes of each movie and rating
+	          user = rev[:user]
+	          rating=rev[:rating]
+	        if @movies.has_key?(mov)
+			#hash of users and ratings per movie. popularity is the size of the hash.
+	          users =  @movies[mov]
+	          users << user
+	          @movies[mov]=users
+	        else
+	        	users=[user] #create an array with the user id
+	        	@movies[mov]=users #store the array in the hash
+	        end
+	        
+
+	        if @users.has_key?(user)
+						u=@users.fetch(user)
+						u[mov]=rating
+  
+						@users[user]=u        
+	        else 
+				u= {} #empty hash
+				u[mov]=rating
+				@users[user]=u
+	        
+	        end
+
+	        
+	    end
+
+
+	    while line = testtxt.gets do
+	    	# then do the same for the test hashes
+	        rev=review(line)
+
+	        mov = rev[:movie]
+		    user = rev[:user]
+	          rating=rev[:rating]
+	        if @test_movies.has_key?(mov)
+
+	          users =  @test_movies[mov]
+	          users << user
+	          @test_movies[mov]=users
+	        else
+	        	users=[user] 
+	        	@test_movies[mov]=users 
+	        end
+
+	        if @test_users.has_key?(user)
+						u=@test_users.fetch(user)
+
+						u[mov]=rating
+
+						@test_users[user]=u        
+	        else 
+				u= {} 
+				u[mov]=rating
+
+				@test_users[user]=u
+	        
+	        end
+
+	        
+	    end
 
 	    
 
 	end
 
 	#loads data by default
-	def load_data(path, movies, users)
+	def load_data(path)
 		
+		@movies=Hash.new
+		@users=Hash.new
 	# usually u.data in the ml-100k directory
+		path=path+"/u.data"
 	    txt= open(path)
 	    while line = txt.gets do
 
@@ -54,24 +126,24 @@ class MovieData
 	        mov = rev[:movie]
 	          user = rev[:user]
 	          rating=rev[:rating]
-	        if movies.has_key?(mov)
-		      viewers =  movies[mov]
-	          viewers << user
-	          movies[mov]=users
+	        if @movies.has_key?(mov)
+		      users =  @movies[mov]
+	          users << user
+	          @movies[mov]=users
 	        else
-	        	viewers=[user] 
-	        	movies[mov]=users 
+	        	users=[user] 
+	        	@movies[mov]=users 
 	        end
 	        
 
-	        if users.has_key?(user)
-						u=users.fetch(user)
+	        if @users.has_key?(user)
+						u=@users.fetch(user)
 						u[mov]=rating
-						users[user]=u        
+						@users[user]=u        
 	        else 
 				u= {} 
 				u[mov]=rating
-				users[user]=u
+				@users[user]=u
 	        
 	        end
 
@@ -129,23 +201,16 @@ class MovieData
 		end
 
 				#most_similar returns a list of users and their similarity to the specified user
-		def most_similar(user, users=nil)
-			if users!=nil
+		def most_similar(user)
 
-				user_list=users
-			else
-
-			user_list=@users
-		end
 		res=Hash.new
-		user_list.each do |key, value|
+		@users.each do |key, value|
 			s=similarity(user, key)
 			res.store(key, s)
 			end
 		
 		result = res.sort_by{|k,v| v}.reverse
 	        return result
-	    
 
 		end
 
@@ -165,16 +230,16 @@ class MovieData
 	    def predict(user, movie)
 
 	    	users=viewers(movie)
+	    	sim=0.0
 	    	
-	    	
-	    	#if no one has seen the movie return a random number
-	    	if users==nil
-	    		return 1+rand(5)
-	    	else
-	    		most_similar_user=most_similar(user,users).take(1)
-	    		return rating(most_similar_user, movie)
+	    	users.each do |u|
+	    		#sum the similarities
+	    		sim=sim+(similarity(user, u)*rating(u,movie))
+	    	end
 
-	   		 end
+	    	sim=sim/users.length #average the sum, returning the averge similarity
+	    	return sim
+
 	    end
 	    
 	    #returns the array of movies that user u has watched
